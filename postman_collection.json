@@ -1,0 +1,417 @@
+{
+  "info": {
+    "name": "API Laravel - Requisitos e testes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Execute a coleção inteira na ordem. O CRUD cria seu próprio produto e salva produto_id, sem alterar produtos preexistentes. A pasta externa usa internet real. A cotação é adicional; PokeAPI atende ao requisito de API gratuita."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "produto_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Status da API",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('API online', () => pm.expect(pm.response.json().status).to.eql('online'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Produtos (CRUD RESTful com Resource)",
+      "item": [
+        {
+          "name": "Criar produto (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Produto de teste Postman\",\n  \"descricao\": \"Criado e removido pela coleção de testes\",\n  \"preco\": 99.9,\n  \"quantidade_estoque\": 3,\n  \"categoria\": \"Testes\",\n  \"ativo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Resource do produto', () => { const p=pm.response.json().data; pm.expect(p).to.include.all.keys('id','nome','preco','preco_formatado','em_estoque'); pm.expect(p.preco).to.be.a('number'); });",
+                  "if(pm.response.code === 201) pm.collectionVariables.set('produto_id', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar produtos (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Coleção de Resources', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('Produto criado aparece na listagem', () => pm.expect(pm.response.json().data.some(p => String(p.id) === String(pm.collectionVariables.get('produto_id')))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar produto (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos/{{produto_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Resource do produto', () => { const p=pm.response.json().data; pm.expect(p).to.include.all.keys('id','nome','preco','preco_formatado','em_estoque'); pm.expect(p.preco).to.be.a('number'); });",
+                  "pm.test('ID correto', () => pm.expect(String(pm.response.json().data.id)).to.eql(String(pm.collectionVariables.get('produto_id'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar por busca e categoria",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos?search=Produto%20de%20teste%20Postman&categoria=Testes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Filtro encontra o produto de teste', () => pm.expect(pm.response.json().data.some(p => String(p.id) === String(pm.collectionVariables.get('produto_id')))).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar produto (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos/{{produto_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Produto de teste Postman\",\n  \"descricao\": \"Criado e removido pela coleção de testes\",\n  \"preco\": 129.9,\n  \"quantidade_estoque\": 3,\n  \"categoria\": \"Testes\",\n  \"ativo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Resource do produto', () => { const p=pm.response.json().data; pm.expect(p).to.include.all.keys('id','nome','preco','preco_formatado','em_estoque'); pm.expect(p.preco).to.be.a('number'); });",
+                  "pm.test('Alteração retornada', () => pm.expect(pm.response.json().data.preco).to.eql(129.90));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar estoque (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos/{{produto_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantidade_estoque\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Estoque atualizado e nome preservado', () => {const p=pm.response.json().data; pm.expect(p.quantidade_estoque).to.eql(0); pm.expect(p.em_estoque).to.eql(false); pm.expect(p.nome).to.eql('Produto de teste Postman');});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rejeitar cadastro inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Erros de validação', () => pm.expect(pm.response.json().errors).to.include.all.keys('nome','preco','quantidade_estoque','categoria'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir produto criado (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos/{{produto_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Excluiu o ID criado', () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get('produto_id'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar exclusão (GET 404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/produtos/{{produto_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Resposta JSON de erro', () => pm.expect(pm.response.json()).to.have.property('message'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Consumo de API Externa",
+      "item": [
+        {
+          "name": "PokeAPI - Pikachu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/external/pokemon/pikachu"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Consumo externo real', () => {const j=pm.response.json(); pm.expect(j.sucesso).to.eql(true); pm.expect(j.dados.id).to.eql(25); pm.expect(j.dados.nome).to.eql('Pikachu');});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PokeAPI - Pokémon inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/external/pokemon/inexistente-postman-999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Erro tratado', () => pm.expect(pm.response.json().sucesso).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Extra - Cotações AwesomeAPI",
+      "item": [
+        {
+          "name": "Consultar cotações",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/external/cotacoes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Moedas retornadas', () => {const j=pm.response.json(); pm.expect(j.sucesso).to.eql(true); pm.expect(j.moedas).to.include.all.keys('dolar','euro','bitcoin');});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

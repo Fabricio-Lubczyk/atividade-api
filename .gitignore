@@ -1,0 +1,40 @@
+# Dependências e builds
+**/vendor/
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/public/build/
+**/public/hot
+# Ambiente local e credenciais
+**/.env
+**/.env.*
+!**/.env.example
+**/auth.json
+**/*.pem
+**/*.key
+**/*.sqlite
+**/*.sqlite-*
+# Relatórios locais e cópias de segurança
+/backup-auditoria-20261017/
+/postman-resultados.json
+/postman-crud-resultados.json
+**/*.log
+**/.phpunit.result.cache
+**/.phpunit.cache/
+**/bootstrap/cache/*.php
+**/storage/logs/*
+**/storage/framework/cache/data/*
+**/storage/framework/sessions/*
+**/storage/framework/views/*
+!**/.gitignore
+# Ferramentas locais dos agentes e editores
+**/.agents/
+**/.claude/
+**/.codex/
+**/.mcp.json
+**/AGENTS.md
+**/CLAUDE.md
+**/.idea/
+**/.vscode/
+**/.DS_Store
+**/Thumbs.db
